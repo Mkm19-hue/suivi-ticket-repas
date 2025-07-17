@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suivi Ticket Repas</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f5f5f5;
+      text-align: center;
+    }
+    #reader { width: 300px; margin: 20px auto; }
+    #result {
+      padding: 10px; border-radius: 8px;
+      background-color: white;
+      display: inline-block;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      min-width: 280px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Suivi Ticket Repas</h1>
+  <div id="reader"></div>
+  <div id="result">Scannez un QR code</div>
+
+  <script>
+    const commission = new URLSearchParams(window.location.search).get("commission") || "inconnu";
+
+    function onScanSuccess(decodedText, decodedResult) {
+      document.getElementById("result").innerText = `Ticket détecté: ${decodedText}\nEnvoi...`;
+
+      fetch("https://ndrswpuglxturdnmpesu.supabase.co/rest/v1/scans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": "S7wmsutw0QrhIaVF1hxYyr1fHG8WDHj7rXxlqEa6tmw",
+          "Authorization": "Bearer S7wmsutw0QrhIaVF1hxYyr1fHG8WDHj7rXxlqEa6tmw"
+        },
+        body: JSON.stringify({
+          ticket: decodedText,
+          commission: commission,
+          timestamp: new Date().toISOString()
+        })
+      })
+      .then(res => {
+        if (res.ok) {
+          document.getElementById("result").innerText = `✅ Ticket ${decodedText} enregistré par ${commission}.`;
+        } else {
+          document.getElementById("result").innerText = `⚠️ Ticket déjà utilisé ou erreur.`;
+        }
+      })
+      .catch(() => {
+        document.getElementById("result").innerText = `❌ Échec de connexion.`;
+      });
+    }
+
+    new Html5Qrcode("reader").start(
+      { facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess
+    );
+  </script>
+</body>
+</html>
